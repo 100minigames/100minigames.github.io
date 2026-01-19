@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Doodle Jump Clone</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+        html, body { width: 100%; height: 100%; overflow: hidden; position: fixed; }
+        body { font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; background: #87CEEB; display: flex; justify-content: center; align-items: center; padding: 10px; }
+        #game-container { position: relative; width: 100%; max-width: 400px; height: 90vh; box-shadow: 0 10px 40px rgba(0,0,0,0.3); border-radius: 15px; overflow: hidden; background: #87CEEB; border: 3px solid #5D8AA8; }
+        #game-header { background: linear-gradient(to right, #5D8AA8, #7EA8C4); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #A3C1DA; height: 60px; }
+        #score-display { font-size: 22px; font-weight: bold; color: #FFD700; text-shadow: 2px 2px 0 #000; }
+        #high-score-display { font-size: 16px; color: white; text-shadow: 1px 1px 0 #000; }
+        #game-canvas { display: block; width: 100%; height: calc(100% - 60px); background: #87CEEB; }
+        #start-screen, #game-over-screen, #pause-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(135, 206, 235, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 100; text-align: center; padding: 20px; }
+        .screen-title { font-size: 48px; color: #FFD700; margin-bottom: 15px; text-shadow: 3px 3px 0 #000, 6px 6px 0 rgba(0,0,0,0.2); font-weight: bold; }
+        .screen-subtitle { font-size: 24px; color: #FF4500; margin-bottom: 20px; text-shadow: 2px 2px 0 #000; }
+        .screen-text { font-size: 18px; margin-bottom: 15px; line-height: 1.5; color: #333; max-width: 90%; }
+        .game-btn { background: linear-gradient(to bottom, #FFD700, #FFA500); border: 3px solid #8B7355; padding: 15px 40px; font-size: 24px; color: #8B4513; border-radius: 50px; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 8px 0 #8B7355, 0 12px 20px rgba(0,0,0,0.3); margin: 10px; min-width: 220px; transition: all 0.1s; font-family: 'Comic Sans MS', sans-serif; }
+        .game-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #8B7355, 0 4px 8px rgba(0,0,0,0.3); }
+        .btn-secondary { background: linear-gradient(to bottom, #5D8AA8, #7EA8C4); color: white; font-size: 20px; padding: 12px 30px; border-color: #3A5F7A; box-shadow: 0 6px 0 #3A5F7A; }
+        #instructions { margin-top: 20px; font-size: 16px; color: #5D8AA8; max-width: 90%; font-weight: bold; }
+        #pause-btn { position: absolute; top: 15px; right: 15px; width: 40px; height: 40px; background: rgba(255, 255, 255, 0.8); border: 3px solid #5D8AA8; border-radius: 50%; color: #5D8AA8; font-size: 20px; cursor: pointer; z-index: 50; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+        #control-hint { position: absolute; bottom: 100px; width: 100%; text-align: center; color: rgba(0, 0, 0, 0.7); font-size: 16px; padding: 0 20px; font-weight: bold; }
+        #character-select { margin-top: 15px; display: flex; gap: 10px; }
+        .character-option { width: 50px; height: 50px; border: 3px solid transparent; border-radius: 10px; cursor: pointer; background: white; display: flex; justify-content: center; align-items: center; font-size: 30px; }
+        .character-option.selected { border-color: #FF4500; box-shadow: 0 0 10px #FF4500; }
+        #sound-toggle { position: absolute; top: 15px; left: 15px; width: 40px; height: 40px; background: rgba(255, 255, 255, 0.8); border: 3px solid #5D8AA8; border-radius: 50%; color: #5D8AA8; font-size: 20px; cursor: pointer; z-index: 50; display: flex; justify-content: center; align-items: center; font-weight: bold; }
+        #music-toggle { position: absolute; top: 15px; left: 65px; width: 40px; height: 40px; background: rgba(255, 255, 255, 0.8); border: 3px solid #5D8AA8; border-radius: 50%; color: #5D8AA8; font-size: 20px; cursor: pointer; z-index: 50; display: flex; justify-content: center; align-items: center; font-weight: bold; display: none; }
+        @media (max-height: 700px) { #game-container { height: 95vh; } .screen-title { font-size: 36px; } .game-btn { padding: 12px 30px; font-size: 20px; } }
+        @media (max-width: 400px) { .screen-title { font-size: 32px; } .game-btn { padding: 10px 25px; font-size: 18px; min-width: 180px; } }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-header">
+            <div id="score-display">Score: 0</div>
+            <div id="high-score-display">High: <span id="high-score-value">0</span></div>
+            <button id="pause-btn">⏸️</button>
+            <button id="sound-toggle">🔊</button>
+            <button id="music-toggle" style="display: none;">🎵</button>
+        </div>
+        <canvas id="game-canvas"></canvas>
+        <div id="control-hint">Tilt device or tap left/right to move!</div>
+        
+        <div id="start-screen">
+            <h1 class="screen-title">DOODLE JUMP</h1>
+            <h2 class="screen-subtitle">BALANCED EDITION</h2>
+            <p class="screen-text">Jump as high as you can!<br>Avoid monsters and holes!</p>
+            <div id="character-select">
+                <div class="character-option selected" data-char="doodle">👾</div>
+                <div class="character-option" data-char="alien">👽</div>
+                <div class="character-option" data-char="robot">🤖</div>
+                <div class="character-option" data-char="cat">😸</div>
+            </div>
+            <button class="game-btn" id="start-btn">PLAY NOW</button>
+            <div id="instructions">Tilt device or tap screen edges to move</div>
+        </div>
+        
+        <div id="pause-screen" style="display: none;">
+            <h1 class="screen-title">PAUSED</h1>
+            <button class="game-btn" id="resume-btn">RESUME</button>
+            <button class="game-btn btn-secondary" id="menu-btn">MENU</button>
+        </div>
+        
+        <div id="game-over-screen" style="display: none;">
+            <h1 class="screen-title">GAME OVER</h1>
+            <p class="screen-text" id="final-score">Score: 0</p>
+            <p class="screen-text" id="best-score">High Score: 0</p>
+            <button class="game-btn" id="restart-btn">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // DOODLE JUMP CLONE - Balanced Edition
+        
+        class DoodleJump {
+            constructor() {
+                this.canvas = document.getElementById('game-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.scoreDisplay = document.getElementById('score-display');
+                this.highScoreValue = document.getElementById('high-score-value');
+                
+                this.resizeCanvas();
+                
+                this.gameRunning = false;
+                this.gamePaused = false;
+                this.score = 0;
+                this.highScore = localStorage.getItem('doodleHighScore') || 0;
+                this.scrollY = 0;
+                this.maxScrollY = 0;
+                this.gameSpeed = 4;
+                this.difficulty = 1;
+                
+                // NEW: Invincibility system
+                this.isInvincible = false;
+                this.invincibilityTimer = 0;
+                this.invincibilityDuration = 1.0; // seconds of invincibility after high jumps
+                
+                // Audio system - only sound effects
+                this.soundEnabled = true;
+                this.audioContext = null;
+                this.setupAudio();
+                
+                // Doodle character
+                this.doodle = {
+                    x: 150,
+                    y: 300,
+                    width: 40,
+                    height: 40,
+                    velocityY: -14,
+                    velocityX: 0,
+                    jumpPower: -14,
+                    gravity: 0.7,
+                    isJumping: true,
+                    facing: 1,
+                    character: 'doodle',
+                    color: '#4CAF50',
+                    wasOnPlatform: false
+                };
+                
+                this.platforms = [];
+                this.enemies = [];
+                this.springs = [];
+                this.jetpacks = [];
+                this.bullets = [];
+                this.particles = [];
+                
+                // Game mechanics
+                this.platformTypes = {
+                    NORMAL: {color: '#4CAF50', width: 70, height: 18, solid: true},
+                    BREAKABLE: {color: '#8B4513', width: 70, height: 18, solid: true, breakable: true},
+                    MOVING: {color: '#2196F3', width: 70, height: 18, solid: true, moving: true},
+                    TRAMPOLINE: {color: '#FFEB3B', width: 70, height: 18, solid: true, bouncy: true},
+                    DISAPPEARING: {color: '#9E9E9E', width: 70, height: 18, solid: true, disappearing: true},
+                    ARROW: {color: '#4CAF50', width: 70, height: 18, solid: true, arrow: true}
+                };
+                
+                this.moveDirection = 0;
+                this.lastTapTime = 0;
+                this.tapCooldown = 200;
+                
+                // Characters
+                this.characters = {
+                    doodle: {emoji: '👾', color: '#4CAF50'},
+                    alien: {emoji: '👽', color: '#9C27B0'},
+                    robot: {emoji: '🤖', color: '#607D8B'},
+                    cat: {emoji: '😸', color: '#FF9800'}
+                };
+                
+                this.setupControls();
+                this.setupEventListeners();
+                this.updateHighScoreDisplay();
+                
+                this.lastTime = 0;
+                window.addEventListener('resize', () => this.resizeCanvas());
+                
+                this.drawTitleScreen();
+            }
+            
+            setupAudio() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Sound presets for sound effects only
+                    this.soundPresets = {
+                        jump: {type: 'sine', frequency: 523.25, duration: 0.1, volume: 0.3},
+                        superJump: {type: 'sine', frequency: 659.25, duration: 0.2, volume: 0.4},
+                        trampoline: {type: 'triangle', frequency: 783.99, duration: 0.3, volume: 0.4},
+                        spring: {type: 'square', frequency: 1046.50, duration: 0.4, volume: 0.5},
+                        jetpack: {type: 'sawtooth', frequency: 220, duration: 0.5, volume: 0.4},
+                        collect: {type: 'sine', frequency: 1046.50, duration: 0.1, volume: 0.3},
+                        break: {type: 'square', frequency: 200, duration: 0.2, volume: 0.4},
+                        enemyHit: {type: 'square', frequency: 150, duration: 0.3, volume: 0.5},
+                        enemyKill: {type: 'sine', frequency: 987.77, duration: 0.2, volume: 0.4},
+                        shoot: {type: 'square', frequency: 880, duration: 0.05, volume: 0.3},
+                        gameOver: {type: 'sawtooth', frequency: 220, duration: 1.0, volume: 0.5},
+                        click: {type: 'sine', frequency: 800, duration: 0.05, volume: 0.2}
+                    };
+                } catch (e) {
+                    console.log('Audio not supported:', e);
+                    this.soundEnabled = false;
+                    document.getElementById('sound-toggle').style.display = 'none';
+                }
+            }
+            
+            createSound(name, preset) {
+                if (!this.audioContext || !this.soundEnabled) return;
+                
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    
+                    oscillator.type = preset.type;
+                    oscillator.frequency.setValueAtTime(preset.frequency, this.audioContext.currentTime);
+                    
+                    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(preset.volume, this.audioContext.currentTime + 0.01);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + preset.duration);
+                    
+                    oscillator.start();
+                    oscillator.stop(this.audioContext.currentTime + preset.duration);
+                } catch (e) {
+                    console.log('Sound error:', e);
+                }
+            }
+            
+            playSound(soundName) {
+                if (!this.soundEnabled || !this.audioContext) return;
+                
+                const preset = this.soundPresets[soundName];
+                if (!preset) return;
+                
+                this.createSound(soundName, preset);
+            }
+            
+            playJumpSound(isSuper = false) {
+                if (isSuper) {
+                    this.playSound('superJump');
+                } else {
+                    this.playSound('jump');
+                }
+            }
+            
+            playCollectSound() {
+                this.playSound('collect');
+            }
+            
+            playBreakSound() {
+                this.playSound('break');
+            }
+            
+            playEnemyHitSound() {
+                this.playSound('enemyHit');
+            }
+            
+            playEnemyKillSound() {
+                this.playSound('enemyKill');
+            }
+            
+            playShootSound() {
+                this.playSound('shoot');
+            }
+            
+            playGameOverSound() {
+                this.playSound('gameOver');
+            }
+            
+            playClickSound() {
+                this.playSound('click');
+            }
+            
+            drawTitleScreen() {
+                this.ctx.fillStyle = '#87CEEB';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw clouds
+                this.ctx.fillStyle = 'white';
+                this.ctx.beginPath();
+                this.ctx.arc(100, 100, 40, 0, Math.PI * 2);
+                this.ctx.arc(140, 80, 35, 0, Math.PI * 2);
+                this.ctx.arc(180, 100, 40, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                this.ctx.beginPath();
+                this.ctx.arc(300, 150, 30, 0, Math.PI * 2);
+                this.ctx.arc(330, 130, 25, 0, Math.PI * 2);
+                this.ctx.arc(360, 150, 30, 0, Math.PI * 2);
+                this.ctx.fill();
+                
+                // Draw doodle
+                this.ctx.font = '80px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('👾', this.canvas.width/2, this.canvas.height/2);
+                
+                this.ctx.font = 'bold 24px Comic Sans MS';
+                this.ctx.fillStyle = '#FF4500';
+                this.ctx.fillText('Tilt device or tap to move!', this.canvas.width/2, this.canvas.height/2 + 100);
+            }
+            
+            resizeCanvas() {
+                const container = document.getElementById('game-container');
+                this.canvas.width = container.clientWidth;
+                this.canvas.height = container.clientHeight - 60;
+            }
+            
+            setupControls() {
+                // Touch controls (tap left/right of screen)
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    if (!this.gameRunning || this.gamePaused) return;
+                    
+                    const touchX = e.touches[0].clientX - this.canvas.getBoundingClientRect().left;
+                    const now = Date.now();
+                    
+                    if (now - this.lastTapTime > this.tapCooldown) {
+                        if (touchX < this.canvas.width / 2) {
+                            this.moveDirection = -1; // Left
+                        } else {
+                            this.moveDirection = 1; // Right
+                        }
+                        this.lastTapTime = now;
+                    }
+                });
+                
+                this.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.moveDirection = 0;
+                });
+                
+                // Mouse controls
+                this.canvas.addEventListener('mousedown', (e) => {
+                    if (!this.gameRunning || this.gamePaused) return;
+                    
+                    const mouseX = e.clientX - this.canvas.getBoundingClientRect().left;
+                    const now = Date.now();
+                    
+                    if (now - this.lastTapTime > this.tapCooldown) {
+                        if (mouseX < this.canvas.width / 2) {
+                            this.moveDirection = -1;
+                        } else {
+                            this.moveDirection = 1;
+                        }
+                        this.lastTapTime = now;
+                    }
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    this.moveDirection = 0;
+                });
+                
+                this.canvas.addEventListener('mouseleave', () => {
+                    this.moveDirection = 0;
+                });
+                
+                // Keyboard controls (for testing)
+                window.addEventListener('keydown', (e) => {
+                    if (!this.gameRunning || this.gamePaused) return;
+                    
+                    if (e.key === 'ArrowLeft' || e.key === 'a') {
+                        this.moveDirection = -1;
+                    }
+                    if (e.key === 'ArrowRight' || e.key === 'd') {
+                        this.moveDirection = 1;
+                    }
+                    if (e.key === ' ') {
+                        // Shoot
+                        this.shoot();
+                    }
+                });
+                
+                window.addEventListener('keyup', (e) => {
+                    if (e.key === 'ArrowLeft' || e.key === 'a') {
+                        if (this.moveDirection === -1) this.moveDirection = 0;
+                    }
+                    if (e.key === 'ArrowRight' || e.key === 'd') {
+                        if (this.moveDirection === 1) this.moveDirection = 0;
+                    }
+                });
+                
+                // Device orientation (tilt controls)
+                if (window.DeviceOrientationEvent) {
+                    window.addEventListener('deviceorientation', (e) => {
+                        if (!this.gameRunning || this.gamePaused) return;
+                        
+                        const gamma = e.gamma; // Left/right tilt
+                        if (gamma) {
+                            if (gamma < -10) {
+                                this.moveDirection = -1;
+                            } else if (gamma > 10) {
+                                this.moveDirection = 1;
+                            } else {
+                                this.moveDirection = 0;
+                            }
+                        }
+                    });
+                }
+                
+                // Character selection
+                document.querySelectorAll('.character-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        this.playClickSound();
+                        document.querySelectorAll('.character-option').forEach(o => o.classList.remove('selected'));
+                        option.classList.add('selected');
+                        this.doodle.character = option.dataset.char;
+                        this.doodle.color = this.characters[this.doodle.character].color;
+                    });
+                });
+                
+                // Sound toggle
+                document.getElementById('sound-toggle').addEventListener('click', () => {
+                    this.playClickSound();
+                    this.soundEnabled = !this.soundEnabled;
+                    const soundBtn = document.getElementById('sound-toggle');
+                    soundBtn.textContent = this.soundEnabled ? '🔊' : '🔇';
+                });
+            }
+            
+            setupEventListeners() {
+                const playClickSound = () => this.playClickSound();
+                
+                document.getElementById('start-btn').addEventListener('click', () => {
+                    playClickSound();
+                    this.startGame();
+                });
+                document.getElementById('restart-btn').addEventListener('click', () => {
+                    playClickSound();
+                    this.startGame();
+                });
+                document.getElementById('resume-btn').addEventListener('click', () => {
+                    playClickSound();
+                    this.resumeGame();
+                });
+                document.getElementById('pause-btn').addEventListener('click', () => {
+                    playClickSound();
+                    this.togglePause();
+                });
+                document.getElementById('menu-btn').addEventListener('click', () => {
+                    playClickSound();
+                    this.returnToMenu();
+                });
+            }
+            
+            updateHighScoreDisplay() {
+                this.highScoreValue.textContent = this.highScore;
+            }
+            
+            startGame() {
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('game-over-screen').style.display = 'none';
+                document.getElementById('pause-screen').style.display = 'none';
+                
+                this.gameRunning = true;
+                this.gamePaused = false;
+                this.score = 0;
+                this.scrollY = 0;
+                this.maxScrollY = 0;
+                this.gameSpeed = 4;
+                this.difficulty = 1;
+                
+                // Reset doodle
+                this.doodle.x = this.canvas.width / 2 - this.doodle.width / 2;
+                this.doodle.y = this.canvas.height * 0.7;
+                this.doodle.velocityY = -14;
+                this.doodle.velocityX = 0;
+                this.doodle.isJumping = true;
+                this.doodle.wasOnPlatform = false;
+                
+                // Reset invincibility
+                this.isInvincible = false;
+                this.invincibilityTimer = 0;
+                
+                this.platforms = [];
+                this.enemies = [];
+                this.springs = [];
+                this.jetpacks = [];
+                this.bullets = [];
+                this.particles = [];
+                
+                // Create initial platforms
+                this.generateInitialPlatforms();
+                
+                this.updateScore();
+                
+                this.lastTime = performance.now();
+                requestAnimationFrame((time) => this.gameLoop(time));
+            }
+            
+            generateInitialPlatforms() {
+                // Create a solid platform under the player at start
+                const startPlatformY = this.doodle.y + this.doodle.height + 5;
+                this.platforms.push({
+                    x: this.doodle.x + this.doodle.width/2 - 35,
+                    y: startPlatformY,
+                    ...this.platformTypes.NORMAL,
+                    active: true,
+                    timeActive: 0
+                });
+                
+                // Generate platforms upward with proper spacing
+                let currentY = startPlatformY;
+                for (let i = 0; i < 30; i++) {
+                    currentY -= 60 + Math.random() * 30;
+                    this.generatePlatformAtHeight(currentY, true);
+                }
+                
+                // Also generate platforms above player
+                currentY = this.doodle.y - 100;
+                for (let i = 0; i < 15; i++) {
+                    currentY -= 60 + Math.random() * 30;
+                    this.generatePlatformAtHeight(currentY, true);
+                }
+            }
+            
+            generatePlatformAtHeight(y, initialGeneration = false) {
+                let typeKey = 'NORMAL';
+                
+                if (!initialGeneration) {
+                    const rand = Math.random();
+                    if (rand < 0.65) {
+                        typeKey = 'NORMAL';
+                    } else if (rand < 0.75) {
+                        typeKey = 'MOVING';
+                    } else if (rand < 0.82) {
+                        typeKey = 'BREAKABLE';
+                    } else if (rand < 0.88) {
+                        typeKey = 'TRAMPOLINE';
+                    } else if (rand < 0.94) {
+                        typeKey = 'DISAPPEARING';
+                    } else {
+                        typeKey = 'ARROW';
+                    }
+                }
+                
+                const type = this.platformTypes[typeKey];
+                
+                const x = Math.random() * (this.canvas.width - type.width - 40) + 20;
+                
+                const platform = {
+                    x: x,
+                    y: y,
+                    ...type,
+                    direction: type.moving ? (Math.random() > 0.5 ? 1 : -1) : 0,
+                    speed: type.moving ? 1 + Math.random() * 0.5 : 0,
+                    active: true,
+                    timeActive: 0
+                };
+                
+                this.platforms.push(platform);
+                
+                // Add items on platforms (only after certain height)
+                if (y < -200 && Math.random() < 0.07) {
+                    this.springs.push({
+                        x: x + type.width/2 - 10,
+                        y: y - 20,
+                        width: 20,
+                        height: 20,
+                        active: true
+                    });
+                }
+                
+                // JETPACK SPAWN RATE REDUCED: 2% instead of 4%
+                if (y < -400 && Math.random() < 0.02) {
+                    this.jetpacks.push({
+                        x: x + type.width/2 - 15,
+                        y: y - 30,
+                        width: 30,
+                        height: 40,
+                        active: true
+                    });
+                }
+                
+                // ENEMY PLACEMENT FIX: Check for safe position above high jumps
+                if (y < -600 && Math.random() < 0.05) {
+                    // Check if this position is safe, especially for high jumps
+                    const isSafePosition = this.isSafeEnemyPosition(x, y, type.width);
+                    
+                    if (isSafePosition) {
+                        this.enemies.push({
+                            x: x + type.width/2 - 20,
+                            y: y - 40,
+                            width: 40,
+                            height: 40,
+                            speed: 0.5 + Math.random() * 0.5,
+                            direction: Math.random() > 0.5 ? 1 : -1,
+                            type: Math.random() > 0.5 ? 'ufo' : 'monster',
+                            active: true
+                        });
+                    }
+                }
+            }
+            
+            isSafeEnemyPosition(x, y, platformWidth) {
+                // Check nearby platforms to ensure enemy doesn't block path
+                const checkRadius = 200; // Increased from 150 for better safety
+                
+                // Get platforms in the area
+                const nearbyPlatforms = this.platforms.filter(p => 
+                    p.y > y - checkRadius && p.y < y + checkRadius &&
+                    Math.abs(p.x + p.width/2 - (x + platformWidth/2)) < checkRadius
+                );
+                
+                // Need at least 3 platforms nearby for safe navigation (increased from 2)
+                if (nearbyPlatforms.length < 3) {
+                    return false;
+                }
+                
+                // Check if platforms are spaced properly for jumping
+                let hasGoodSpacing = false;
+                for (let i = 0; i < nearbyPlatforms.length; i++) {
+                    for (let j = i + 1; j < nearbyPlatforms.length; j++) {
+                        const p1 = nearbyPlatforms[i];
+                        const p2 = nearbyPlatforms[j];
+                        const verticalDist = Math.abs(p1.y - p2.y);
+                        const horizontalDist = Math.abs((p1.x + p1.width/2) - (p2.x + p2.width/2));
+                        
+                        // Good spacing: platforms should be 50-200px vertically apart
+                        // and not too far horizontally (max 150px, reduced from 200px)
+                        if (verticalDist > 50 && verticalDist < 200 && horizontalDist < 150) {
+                            hasGoodSpacing = true;
+                            break;
+                        }
+                    }
+                    if (hasGoodSpacing) break;
+                }
+                
+                return hasGoodSpacing;
+            }
+            
+            // NEW: Activate invincibility
+            activateInvincibility(duration = this.invincibilityDuration) {
+                this.isInvincible = true;
+                this.invincibilityTimer = duration;
+            }
+            
+            // NEW: Update invincibility timer
+            updateInvincibility(deltaTime) {
+                if (this.isInvincible) {
+                    this.invincibilityTimer -= deltaTime;
+                    if (this.invincibilityTimer <= 0) {
+                        this.isInvincible = false;
+                        this.invincibilityTimer = 0;
+                    }
+                }
+            }
+            
+            togglePause() {
+                if (!this.gameRunning) return;
+                this.gamePaused = !this.gamePaused;
+                document.getElementById('pause-screen').style.display = this.gamePaused ? 'flex' : 'none';
+                if (!this.gamePaused) {
+                    this.lastTime = performance.now();
+                    requestAnimationFrame((time) => this.gameLoop(time));
+                }
+            }
+            
+            resumeGame() {
+                this.gamePaused = false;
+                document.getElementById('pause-screen').style.display = 'none';
+                this.lastTime = performance.now();
+                requestAnimationFrame((time) => this.gameLoop(time));
+            }
+            
+            returnToMenu() {
+                this.gameRunning = false;
+                document.getElementById('pause-screen').style.display = 'none';
+                document.getElementById('start-screen').style.display = 'flex';
+                this.drawTitleScreen();
+            }
+            
+            gameOver() {
+                this.playGameOverSound();
+                this.gameRunning = false;
+                document.getElementById('final-score').textContent = `Score: ${Math.floor(this.score)}`;
+                document.getElementById('best-score').textContent = `High Score: ${this.highScore}`;
+                document.getElementById('game-over-screen').style.display = 'flex';
+                if (this.score > this.highScore) {
+                    this.highScore = Math.floor(this.score);
+                    localStorage.setItem('doodleHighScore', this.highScore);
+                    this.updateHighScoreDisplay();
+                }
+            }
+            
+            updateScore() {
+                this.scoreDisplay.textContent = `Score: ${Math.floor(this.score)}`;
+                if (this.score > this.highScore) {
+                    this.highScore = Math.floor(this.score);
+                }
+            }
+            
+            createParticles(x, y, color, count = 10) {
+                for(let i = 0; i < count; i++) {
+                    this.particles.push({
+                        x, y,
+                        size: 2 + Math.random() * 4,
+                        speedX: (Math.random() - 0.5) * 8,
+                        speedY: (Math.random() - 0.5) * 8,
+                        color, life: 1.0
+                    });
+                }
+            }
+            
+            shoot() {
+                if (this.gameRunning && !this.gamePaused) {
+                    this.playShootSound();
+                    this.bullets.push({
+                        x: this.doodle.x + this.doodle.width/2,
+                        y: this.doodle.y,
+                        width: 5,
+                        height: 10,
+                        speedY: -15,
+                        active: true
+                    });
+                }
+            }
+            
+            gameLoop(time) {
+                if(!this.gameRunning || this.gamePaused) return;
+                
+                const deltaTime = Math.min(time - this.lastTime, 32) / 16.67;
+                this.lastTime = time;
+                
+                // Clear canvas
+                this.ctx.fillStyle = '#87CEEB';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                this.updateGame(deltaTime);
+                this.drawGame();
+                
+                // Check game over
+                const playerScreenY = this.doodle.y - this.scrollY;
+                if (playerScreenY > this.canvas.height + 100) {
+                    this.gameOver();
+                    return;
+                }
+                
+                requestAnimationFrame((t) => this.gameLoop(t));
+            }
+            
+            updateGame(deltaTime) {
+                // Update invincibility
+                this.updateInvincibility(deltaTime);
+                
+                // Update doodle
+                this.updateDoodle(deltaTime);
+                
+                // Update platforms
+                this.updatePlatforms(deltaTime);
+                
+                // Update enemies
+                this.updateEnemies(deltaTime);
+                
+                // Update items
+                this.updateItems(deltaTime);
+                
+                // Update bullets
+                this.updateBullets(deltaTime);
+                
+                // Update particles
+                this.updateParticles(deltaTime);
+                
+                // Update scroll and score
+                this.updateScrollAndScore(deltaTime);
+                
+                // Generate new platforms as we go up
+                this.generateNewPlatforms();
+            }
+            
+            updateDoodle(deltaTime) {
+                // Apply gravity
+                this.doodle.velocityY += this.doodle.gravity * deltaTime;
+                
+                // Horizontal movement
+                const targetSpeed = this.moveDirection * 10;
+                this.doodle.velocityX += (targetSpeed - this.doodle.velocityX) * 0.4 * deltaTime;
+                
+                // Update position
+                this.doodle.x += this.doodle.velocityX * deltaTime;
+                this.doodle.y += this.doodle.velocityY * deltaTime;
+                
+                // Update facing direction
+                if (Math.abs(this.doodle.velocityX) > 0.5) {
+                    this.doodle.facing = this.doodle.velocityX > 0 ? 1 : -1;
+                }
+                
+                // Screen wrapping
+                if (this.doodle.x < -this.doodle.width) {
+                    this.doodle.x = this.canvas.width;
+                } else if (this.doodle.x > this.canvas.width) {
+                    this.doodle.x = -this.doodle.width;
+                }
+                
+                // Reset platform collision flag
+                this.doodle.wasOnPlatform = false;
+                
+                // Platform collision
+                for(let i = 0; i < this.platforms.length; i++) {
+                    const platform = this.platforms[i];
+                    if (!platform.active) continue;
+                    
+                    // Check if we're above the platform and falling
+                    if (this.doodle.velocityY >= 0) {
+                        const playerBottom = this.doodle.y + this.doodle.height;
+                        const playerNextBottom = playerBottom + this.doodle.velocityY * deltaTime;
+                        
+                        if (playerBottom <= platform.y && playerNextBottom >= platform.y - 5) {
+                            if (this.doodle.x + this.doodle.width - 8 > platform.x && 
+                                this.doodle.x + 8 < platform.x + platform.width) {
+                                
+                                this.doodle.y = platform.y - this.doodle.height;
+                                this.doodle.wasOnPlatform = true;
+                                
+                                if (platform.breakable) {
+                                    platform.active = false;
+                                    this.createParticles(platform.x + platform.width/2, platform.y, '#8B4513', 15);
+                                    this.playBreakSound();
+                                    this.playJumpSound();
+                                    this.doodle.velocityY = this.doodle.jumpPower;
+                                } else if (platform.disappearing) {
+                                    platform.timeActive += deltaTime;
+                                    if (platform.timeActive > 60) {
+                                        platform.active = false;
+                                    }
+                                    this.playJumpSound();
+                                    this.doodle.velocityY = this.doodle.jumpPower;
+                                } else if (platform.bouncy) {
+                                    // Trampoline - give invincibility
+                                    this.doodle.velocityY = this.doodle.jumpPower * 1.5; // Reduced from 1.8
+                                    this.createParticles(platform.x + platform.width/2, platform.y, '#FFEB3B', 10);
+                                    this.playSound('trampoline');
+                                    this.activateInvincibility(0.8); // Invincible for trampoline jumps
+                                } else {
+                                    this.doodle.velocityY = this.doodle.jumpPower;
+                                    this.playJumpSound();
+                                    
+                                    if (platform.arrow) {
+                                        this.doodle.velocityX = 10 * (platform.direction || 1);
+                                    }
+                                }
+                                
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // Spring collision
+                for(let i = this.springs.length - 1; i >= 0; i--) {
+                    const spring = this.springs[i];
+                    if (!spring.active) continue;
+                    
+                    if (this.doodle.x + this.doodle.width > spring.x &&
+                        this.doodle.x < spring.x + spring.width &&
+                        this.doodle.y + this.doodle.height > spring.y &&
+                        this.doodle.y < spring.y + spring.height) {
+                        
+                        spring.active = false;
+                        // SPRING POWER REDUCED: 1.8x instead of 2.2x
+                        this.doodle.velocityY = this.doodle.jumpPower * 1.8;
+                        this.createParticles(spring.x + spring.width/2, spring.y, '#FF9800', 15);
+                        this.playSound('spring');
+                        this.playCollectSound();
+                        // Give invincibility after spring jump
+                        this.activateInvincibility(1.0);
+                        break;
+                    }
+                }
+                
+                // Jetpack collision - BUFFED
+                for(let i = this.jetpacks.length - 1; i >= 0; i--) {
+                    const jetpack = this.jetpacks[i];
+                    if (!jetpack.active) continue;
+                    
+                    if (this.doodle.x + this.doodle.width > jetpack.x &&
+                        this.doodle.x < jetpack.x + jetpack.width &&
+                        this.doodle.y + this.doodle.height > jetpack.y &&
+                        this.doodle.y < jetpack.y + jetpack.height) {
+                        
+                        jetpack.active = false;
+                        // JETPACK BUFFED: Lower gravity and higher flight
+                        this.doodle.gravity = 0.1; // Reduced from 0.2
+                        this.doodle.velocityY = -10; // Increased from -8
+                        this.createParticles(jetpack.x + jetpack.width/2, jetpack.y, '#2196F3', 20);
+                        this.playSound('jetpack');
+                        this.playCollectSound();
+                        // JETPACK BUFFED: Longer duration
+                        setTimeout(() => {
+                            this.doodle.gravity = 0.7;
+                        }, 4000); // Increased from 3000
+                        // Give invincibility during jetpack
+                        this.activateInvincibility(1.5);
+                        break;
+                    }
+                }
+                
+                // Enemy collision - WITH INVINCIBILITY CHECK
+                if (!this.isInvincible) {
+                    for(let i = this.enemies.length - 1; i >= 0; i--) {
+                        const enemy = this.enemies[i];
+                        if (!enemy.active) continue;
+                        
+                        // More generous collision detection
+                        const enemyLeft = enemy.x;
+                        const enemyRight = enemy.x + enemy.width;
+                        const enemyTop = enemy.y;
+                        const enemyBottom = enemy.y + enemy.height;
+                        
+                        const doodleLeft = this.doodle.x + 5; // Padding
+                        const doodleRight = this.doodle.x + this.doodle.width - 5;
+                        const doodleTop = this.doodle.y + 5;
+                        const doodleBottom = this.doodle.y + this.doodle.height - 5;
+                        
+                        // Check for collision
+                        if (doodleRight > enemyLeft && 
+                            doodleLeft < enemyRight && 
+                            doodleBottom > enemyTop && 
+                            doodleTop < enemyBottom) {
+                            
+                            // Only count as stomp if player is clearly above enemy
+                            if (this.doodle.velocityY > 0 && 
+                                doodleBottom < enemyTop + enemy.height * 0.6) {
+                                // Stomp enemy - more forgiving
+                                enemy.active = false;
+                                this.doodle.velocityY = this.doodle.jumpPower * 0.7;
+                                this.score += 100;
+                                this.createParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#FF0000', 20);
+                                this.playEnemyKillSound();
+                                this.playCollectSound();
+                            } else {
+                                // Hit by enemy - but check if we're invincible
+                                if (!this.isInvincible) {
+                                    this.playEnemyHitSound();
+                                    this.gameOver();
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Bullet collision with enemies
+                for(let i = this.bullets.length - 1; i >= 0; i--) {
+                    const bullet = this.bullets[i];
+                    if (!bullet.active) continue;
+                    
+                    for(let j = this.enemies.length - 1; j >= 0; j--) {
+                        const enemy = this.enemies[j];
+                        if (!enemy.active) continue;
+                        
+                        if (bullet.x + bullet.width > enemy.x &&
+                            bullet.x < enemy.x + enemy.width &&
+                            bullet.y + bullet.height > enemy.y &&
+                            bullet.y < enemy.y + enemy.height) {
+                            
+                            bullet.active = false;
+                            enemy.active = false;
+                            this.score += 100;
+                            this.createParticles(enemy.x + enemy.width/2, enemy.y + enemy.height/2, '#FF0000', 20);
+                            this.playEnemyKillSound();
+                            this.playCollectSound();
+                            break;
+                        }
+                    }
+                }
+                
+                this.doodle.isJumping = !this.doodle.wasOnPlatform;
+            }
+            
+            updatePlatforms(deltaTime) {
+                for(const platform of this.platforms) {
+                    if (!platform.active) continue;
+                    
+                    // Move moving platforms
+                    if (platform.moving) {
+                        platform.x += platform.speed * platform.direction * deltaTime;
+                        
+                        if (platform.x < 20 || platform.x > this.canvas.width - platform.width - 20) {
+                            platform.direction *= -1;
+                            platform.x = Math.max(20, Math.min(this.canvas.width - platform.width - 20, platform.x));
+                        }
+                    }
+                    
+                    // Update disappearing platform
+                    if (platform.disappearing) {
+                        platform.timeActive += deltaTime;
+                    }
+                }
+            }
+            
+            updateEnemies(deltaTime) {
+                for(const enemy of this.enemies) {
+                    if (!enemy.active) continue;
+                    
+                    enemy.x += enemy.speed * enemy.direction * deltaTime;
+                    
+                    // Keep enemies within bounds
+                    if (enemy.x < 20) {
+                        enemy.x = 20;
+                        enemy.direction = 1;
+                    } else if (enemy.x > this.canvas.width - enemy.width - 20) {
+                        enemy.x = this.canvas.width - enemy.width - 20;
+                        enemy.direction = -1;
+                    }
+                    
+                    // UFOs move up and down
+                    if (enemy.type === 'ufo') {
+                        enemy.y += Math.sin(Date.now() / 500) * 0.5;
+                    }
+                }
+            }
+            
+            updateItems(deltaTime) {
+                this.springs = this.springs.filter(item => item.active);
+                this.jetpacks = this.jetpacks.filter(item => item.active);
+            }
+            
+            updateBullets(deltaTime) {
+                for(let i = this.bullets.length - 1; i >= 0; i--) {
+                    const bullet = this.bullets[i];
+                    if (!bullet.active) continue;
+                    
+                    bullet.y += bullet.speedY * deltaTime;
+                    
+                    if (bullet.y < this.scrollY - 100) {
+                        bullet.active = false;
+                    }
+                }
+                
+                this.bullets = this.bullets.filter(b => b.active);
+            }
+            
+            updateParticles(deltaTime) {
+                for(let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+                    p.life -= 0.03;
+                    if(p.life <= 0) this.particles.splice(i, 1);
+                }
+            }
+            
+            updateScrollAndScore(deltaTime) {
+                // Scroll screen up as doodle goes up
+                const scrollThreshold = 150;
+                if (this.doodle.y < this.scrollY + scrollThreshold) {
+                    const scrollAmount = (this.scrollY + scrollThreshold - this.doodle.y) * 0.1;
+                    this.scrollY -= scrollAmount;
+                }
+                
+                // Update max height and score
+                if (this.scrollY < this.maxScrollY) {
+                    const heightGained = this.maxScrollY - this.scrollY;
+                    this.maxScrollY = this.scrollY;
+                    this.score += heightGained * 0.2;
+                    this.updateScore();
+                }
+                
+                // Increase difficulty gradually
+                this.difficulty = 1 + Math.abs(this.maxScrollY) / 8000;
+            }
+            
+            generateNewPlatforms() {
+                // Find the highest platform
+                const activePlatforms = this.platforms.filter(p => p.active);
+                if (activePlatforms.length === 0) return;
+                
+                const highestPlatform = Math.min(...activePlatforms.map(p => p.y));
+                
+                // Generate platforms much higher above the current view
+                const targetHeight = this.scrollY - 1200;
+                
+                // Generate new platforms above current view
+                let currentY = highestPlatform;
+                while (currentY > targetHeight) {
+                    const newY = currentY - (60 + Math.random() * 30);
+                    this.generatePlatformAtHeight(newY);
+                    currentY = newY;
+                }
+                
+                // Only remove platforms that are VERY far below
+                const removeThreshold = this.scrollY + this.canvas.height + 1000;
+                this.platforms = this.platforms.filter(p => p.y < removeThreshold || p.active === false);
+                this.springs = this.springs.filter(s => s.y < removeThreshold);
+                this.jetpacks = this.jetpacks.filter(j => j.y < removeThreshold);
+                this.enemies = this.enemies.filter(e => e.y < removeThreshold);
+            }
+            
+            drawGame() {
+                this.ctx.save();
+                this.ctx.translate(0, -this.scrollY);
+                
+                // Draw background
+                this.drawBackground();
+                
+                // Draw game objects
+                this.drawPlatforms();
+                this.drawSprings();
+                this.drawJetpacks();
+                this.drawEnemies();
+                this.drawBullets();
+                this.drawParticles();
+                this.drawDoodle();
+                
+                this.ctx.restore();
+            }
+            
+            drawBackground() {
+                // Draw clouds
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                for(let i = 0; i < 5; i++) {
+                    const cloudX = (i * 300 + this.scrollY * 0.1) % (this.canvas.width + 400) - 200;
+                    const cloudY = this.scrollY + 100 + (i * 150) % 300;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(cloudX, cloudY, 30, 0, Math.PI * 2);
+                    this.ctx.arc(cloudX + 40, cloudY - 20, 25, 0, Math.PI * 2);
+                    this.ctx.arc(cloudX + 80, cloudY, 30, 0, Math.PI * 2);
+                    this.ctx.fill();
+                }
+            }
+            
+            drawPlatforms() {
+                this.platforms.forEach(platform => {
+                    const shouldDraw = platform.active && 
+                        platform.y < this.scrollY + this.canvas.height + 200 && 
+                        platform.y > this.scrollY - 200;
+                    
+                    if (!shouldDraw) return;
+                    
+                    // Draw platform
+                    this.ctx.fillStyle = platform.color;
+                    if (platform.disappearing) {
+                        this.ctx.globalAlpha = 1 - (platform.timeActive / 60);
+                    }
+                    
+                    this.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                    
+                    // Draw details
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                    this.ctx.fillRect(platform.x, platform.y + platform.height, platform.width, 5);
+                    
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    this.ctx.fillRect(platform.x, platform.y, platform.width, 3);
+                    
+                    // Draw arrow
+                    if (platform.arrow) {
+                        this.ctx.fillStyle = '#FF4500';
+                        this.ctx.font = 'bold 20px Arial';
+                        this.ctx.textAlign = 'center';
+                        const arrow = platform.direction > 0 ? '→' : '←';
+                        this.ctx.fillText(arrow, platform.x + platform.width/2, platform.y + platform.height/2 + 6);
+                    }
+                    
+                    this.ctx.globalAlpha = 1.0;
+                });
+            }
+            
+            drawSprings() {
+                this.springs.forEach(spring => {
+                    if (!spring.active || spring.y > this.scrollY + this.canvas.height + 100 || spring.y < this.scrollY - 100) return;
+                    
+                    this.ctx.fillStyle = '#FF9800';
+                    this.ctx.fillRect(spring.x, spring.y, spring.width, spring.height);
+                    
+                    // Draw spring coils
+                    this.ctx.strokeStyle = '#FF5722';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    for(let i = 0; i < 3; i++) {
+                        this.ctx.moveTo(spring.x + 5, spring.y + 5 + i * 5);
+                        this.ctx.lineTo(spring.x + spring.width - 5, spring.y + 5 + i * 5);
+                    }
+                    this.ctx.stroke();
+                });
+            }
+            
+            drawJetpacks() {
+                this.jetpacks.forEach(jetpack => {
+                    if (!jetpack.active || jetpack.y > this.scrollY + this.canvas.height + 100 || jetpack.y < this.scrollY - 100) return;
+                    
+                    this.ctx.fillStyle = '#2196F3';
+                    this.ctx.fillRect(jetpack.x, jetpack.y, jetpack.width, jetpack.height);
+                    
+                    this.ctx.fillStyle = '#1976D2';
+                    this.ctx.fillRect(jetpack.x + 5, jetpack.y + 5, jetpack.width - 10, jetpack.height - 10);
+                    
+                    // Draw flames
+                    const flameSize = 5 + Math.sin(Date.now() / 100) * 3;
+                    this.ctx.fillStyle = '#FF9800';
+                    this.ctx.fillRect(jetpack.x + jetpack.width/2 - 5, jetpack.y + jetpack.height, 10, flameSize);
+                    this.ctx.fillStyle = '#FF5722';
+                    this.ctx.fillRect(jetpack.x + jetpack.width/2 - 3, jetpack.y + jetpack.height + flameSize, 6, flameSize * 0.7);
+                });
+            }
+            
+            drawEnemies() {
+                this.enemies.forEach(enemy => {
+                    if (!enemy.active || enemy.y > this.scrollY + this.canvas.height + 100 || enemy.y < this.scrollY - 100) return;
+                    
+                    if (enemy.type === 'ufo') {
+                        this.ctx.fillStyle = '#9C27B0';
+                        this.ctx.beginPath();
+                        this.ctx.ellipse(enemy.x + enemy.width/2, enemy.y + enemy.height/2, enemy.width/2, enemy.height/3, 0, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        
+                        this.ctx.fillStyle = '#7B1FA2';
+                        this.ctx.beginPath();
+                        this.ctx.ellipse(enemy.x + enemy.width/2, enemy.y + enemy.height/2 - 5, enemy.width/3, enemy.height/4, 0, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        
+                        this.ctx.fillStyle = '#00BCD4';
+                        this.ctx.beginPath();
+                        this.ctx.arc(enemy.x + enemy.width/2 - 10, enemy.y + enemy.height/2 + 5, 3, 0, Math.PI * 2);
+                        this.ctx.arc(enemy.x + enemy.width/2 + 10, enemy.y + enemy.height/2 + 5, 3, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    } else {
+                        this.ctx.fillStyle = '#F44336';
+                        this.ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+                        
+                        this.ctx.fillStyle = 'white';
+                        this.ctx.fillRect(enemy.x + 8, enemy.y + 8, 8, 8);
+                        this.ctx.fillRect(enemy.x + enemy.width - 16, enemy.y + 8, 8, 8);
+                        this.ctx.fillStyle = 'black';
+                        this.ctx.fillRect(enemy.x + 10, enemy.y + 10, 4, 4);
+                        this.ctx.fillRect(enemy.x + enemy.width - 14, enemy.y + 10, 4, 4);
+                        
+                        this.ctx.fillStyle = 'black';
+                        this.ctx.fillRect(enemy.x + 12, enemy.y + 25, enemy.width - 24, 4);
+                    }
+                });
+            }
+            
+            drawBullets() {
+                this.bullets.forEach(bullet => {
+                    if (!bullet.active || bullet.y > this.scrollY + this.canvas.height + 100 || bullet.y < this.scrollY - 100) return;
+                    
+                    this.ctx.fillStyle = '#FFD700';
+                    this.ctx.fillRect(bullet.x - bullet.width/2, bullet.y, bullet.width, bullet.height);
+                });
+            }
+            
+            drawParticles() {
+                this.particles.forEach(p => {
+                    if (p.y > this.scrollY + this.canvas.height + 100 || p.y < this.scrollY - 100) return;
+                    
+                    this.ctx.globalAlpha = p.life;
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+                this.ctx.globalAlpha = 1.0;
+            }
+            
+            drawDoodle() {
+                const char = this.characters[this.doodle.character];
+                
+                // Draw shadow
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                this.ctx.fillRect(this.doodle.x + 3, this.doodle.y + 5, this.doodle.width, this.doodle.height);
+                
+                // Draw body - with invincibility effect
+                if (this.isInvincible) {
+                    // Flash effect when invincible
+                    const flashRate = Math.sin(Date.now() / 100) * 0.3 + 0.7;
+                    this.ctx.globalAlpha = flashRate;
+                    this.ctx.fillStyle = '#FFD700'; // Gold color when invincible
+                } else {
+                    this.ctx.fillStyle = this.doodle.color;
+                }
+                
+                this.ctx.fillRect(this.doodle.x, this.doodle.y, this.doodle.width, this.doodle.height);
+                this.ctx.globalAlpha = 1.0;
+                
+                // Draw character
+                this.ctx.font = '40px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(char.emoji, this.doodle.x + this.doodle.width/2, this.doodle.y + this.doodle.height/2 + 15);
+                
+                // Draw eyes based on direction
+                if (this.doodle.facing === 1) {
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.fillRect(this.doodle.x + this.doodle.width - 15, this.doodle.y + 15, 6, 6);
+                    this.ctx.fillStyle = 'black';
+                    this.ctx.fillRect(this.doodle.x + this.doodle.width - 13, this.doodle.y + 17, 3, 3);
+                } else {
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.fillRect(this.doodle.x + 9, this.doodle.y + 15, 6, 6);
+                    this.ctx.fillStyle = 'black';
+                    this.ctx.fillRect(this.doodle.x + 11, this.doodle.y + 17, 3, 3);
+                }
+                
+                // Draw jetpack flames
+                if (this.doodle.gravity < 0.7) {
+                    const flameSize = 10 + Math.sin(Date.now() / 50) * 5;
+                    this.ctx.fillStyle = '#FF9800';
+                    this.ctx.fillRect(this.doodle.x + this.doodle.width/2 - 7, this.doodle.y + this.doodle.height, 14, flameSize);
+                    this.ctx.fillStyle = '#FF5722';
+                    this.ctx.fillRect(this.doodle.x + this.doodle.width/2 - 5, this.doodle.y + this.doodle.height + flameSize, 10, flameSize * 0.7);
+                }
+            }
+        }
+        
+        window.addEventListener('load', () => {
+            window.game = new DoodleJump();
+        });
+        
+        document.addEventListener('touchmove', (e) => {
+            if (e.scale !== 1) e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
