@@ -124,28 +124,35 @@
         
         .btn {
             display: inline-block;
-            background: linear-gradient(to right, #3498db, #2980b9);
+            background: linear-gradient(to right, #2ecc71, #27ae60);
             color: white;
             padding: 12px 25px;
             border-radius: 50px;
             text-decoration: none;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
             width: 100%;
             text-align: center;
+            font-size: 1rem;
+            box-shadow: 0 4px 10px rgba(46, 204, 113, 0.2);
         }
         
         .btn:hover {
-            background: linear-gradient(to right, #2980b9, #1f639c);
-            box-shadow: 0 5px 15px rgba(41, 128, 185, 0.3);
+            background: linear-gradient(to right, #27ae60, #219653);
+            box-shadow: 0 6px 15px rgba(39, 174, 96, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
         }
         
         .btn i {
-            margin-right: 8px;
+            margin-right: 10px;
         }
         
         footer {
@@ -162,7 +169,7 @@
             padding: 25px;
             margin-bottom: 40px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-            border-left: 5px solid #3498db;
+            border-left: 5px solid #2ecc71;
         }
         
         .instructions h2 {
@@ -174,7 +181,16 @@
         }
         
         .instructions h2 i {
-            color: #3498db;
+            color: #2ecc71;
+        }
+        
+        .page-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
         }
         
         @media (max-width: 768px) {
@@ -184,6 +200,12 @@
             
             h1 {
                 font-size: 2.2rem;
+            }
+            
+            .page-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
             }
         }
         
@@ -223,18 +245,43 @@
         .card:nth-child(8) { animation-delay: 0.8s; }
         .card:nth-child(9) { animation-delay: 0.9s; }
         .card:nth-child(10) { animation-delay: 1.0s; }
+        
+        /* Play button pulse animation */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 4px 10px rgba(46, 204, 113, 0.2);
+            }
+            50% {
+                box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+            }
+            100% {
+                box-shadow: 0 4px 10px rgba(46, 204, 113, 0.2);
+            }
+        }
+        
+        .btn {
+            animation: pulse 2s infinite;
+        }
+        
+        .btn:hover {
+            animation: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Image Gallery</h1>
-            <p class="subtitle">Explore our collection of images. Click on any button below to view the corresponding page.</p>
+            <h1>Interactive Gallery</h1>
+            <p class="subtitle">Explore our collection of interactive experiences. Click "Play Now" on any item below to launch the corresponding experience.</p>
         </header>
         
         <div class="instructions">
-            <h2><i class="fas fa-info-circle"></i> How to use this gallery</h2>
-            <p>Each card below represents a page in the gallery. The placeholder image gives a visual preview, and the button will take you to the corresponding numbered HTML file (1.html, 2.html, etc.). Simply click on any button to navigate to that page.</p>
+            <h2><i class="fas fa-gamepad"></i> How to use this gallery</h2>
+            <p>Each card below represents an interactive experience. The placeholder image gives a visual preview, and the "Play Now" button will launch the corresponding numbered experience (1.html, 2.html, etc.). Simply click on any "Play Now" button to start that experience.</p>
+            <div class="page-info">
+                <span><i class="fas fa-info-circle"></i> Each button links to its corresponding HTML file</span>
+                <span><i class="fas fa-mouse-pointer"></i> Hover over cards for preview effect</span>
+            </div>
         </div>
         
         <div class="gallery">
@@ -242,24 +289,24 @@
         </div>
         
         <footer>
-            <p>Image Gallery Index &copy; 2023 | All placeholder images from Unsplash</p>
-            <p>Navigation to pages 1.html through 10.html</p>
+            <p>Interactive Gallery &copy; 2023 | All placeholder images from Unsplash</p>
+            <p>Click "Play Now" to launch pages 1.html through 10.html</p>
         </footer>
     </div>
 
     <script>
         // Card data - descriptions for each page
         const cardData = [
-            { title: "Mountain Landscape", description: "Breathtaking views of majestic mountain ranges and serene alpine scenery." },
-            { title: "Ocean Waves", description: "The powerful and calming beauty of ocean waves crashing against the shore." },
-            { title: "Urban Architecture", description: "Modern cityscapes and innovative architectural designs from around the world." },
-            { title: "Forest Path", description: "Tranquil walks through lush green forests with dappled sunlight." },
-            { title: "Desert Dunes", description: "The golden beauty of vast desert landscapes and rolling sand dunes." },
-            { title: "Night Sky", description: "Stunning views of starry nights, galaxies, and celestial phenomena." },
-            { title: "Wildlife Photography", description: "Close-up encounters with animals in their natural habitats." },
-            { title: "Abstract Art", description: "Creative and thought-provoking abstract visual compositions." },
-            { title: "Vintage Collection", description: "A nostalgic look at retro styles and historical photography." },
-            { title: "Macro World", description: "The fascinating details of small objects and textures up close." }
+            { title: "Mountain Adventure", description: "Explore breathtaking mountain landscapes in this interactive experience." },
+            { title: "Ocean Explorer", description: "Dive into the depths of the ocean and discover marine life." },
+            { title: "City Builder", description: "Create your own metropolis with modern architectural designs." },
+            { title: "Forest Journey", description: "Navigate through lush green forests and discover hidden paths." },
+            { title: "Desert Quest", description: "Traverse golden desert landscapes and uncover ancient secrets." },
+            { title: "Space Odyssey", description: "Journey through galaxies and explore celestial phenomena." },
+            { title: "Wildlife Safari", description: "Encounter animals in their natural habitats up close." },
+            { title: "Art Studio", description: "Create and interact with abstract visual compositions." },
+            { title: "Time Traveler", description: "Experience retro styles and historical moments." },
+            { title: "Microscopic World", description: "Explore fascinating details of small objects up close." }
         ];
         
         // Image placeholder URLs from Unsplash with different categories
@@ -293,7 +340,7 @@
                     <h3 class="card-title">${cardData[i].title}</h3>
                     <p class="card-description">${cardData[i].description}</p>
                     <a href="${cardNumber}.html" class="btn">
-                        <i class="fas fa-external-link-alt"></i> Play now! 
+                        <i class="fas fa-play-circle"></i> Play Now
                     </a>
                 </div>
             `;
@@ -301,15 +348,37 @@
             gallery.appendChild(card);
         }
         
-        // Add click event to all buttons to simulate navigation
+        // Add click event to all buttons
         document.querySelectorAll('.btn').forEach(button => {
             button.addEventListener('click', function(e) {
+                // Add a clicking effect
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+                
                 // In a real scenario, this would navigate to the page
-                // Here we just show an alert since the pages don't exist
                 const pageNum = this.getAttribute('href').split('.')[0];
-                console.log(`Navigating to page ${pageNum}.html`);
-                // In a real implementation, remove the alert and let the link work normally
-                // alert(`In a real implementation, this would navigate to ${pageNum}.html`);
+                console.log(`Launching experience ${pageNum}.html`);
+                
+                // Optional: Add a loading indicator
+                const originalHTML = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                this.style.pointerEvents = 'none';
+                
+                // Simulate loading time
+                setTimeout(() => {
+                    this.innerHTML = originalHTML;
+                    this.style.pointerEvents = 'auto';
+                }, 1000);
+            });
+        });
+        
+        // Add a message when hovering over buttons
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                const pageNum = this.getAttribute('href').split('.')[0];
+                this.title = `Click to launch experience ${pageNum}`;
             });
         });
     </script>
